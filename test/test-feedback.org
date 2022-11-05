@@ -1,0 +1,15 @@
+* A sample results file
+
+  Some notes (to be ignored).
+
+** 12345678 18
+
+   Decent work.
+
+   Could do better.
+
+** 23456788 5
+
+   Not decent work.
+
+   Possibly couldn't do better.
