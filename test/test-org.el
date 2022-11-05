@@ -43,13 +43,43 @@
   (should (not (org-sta-fh--student-identifier? "sd80"))))
 
 (ert-deftest grades ()
-  "Test we can parse grades on the 20-point scale."
-  (should (org-sta-fh--grade? 0))
-  (should (org-sta-fh--grade? 20))
-  (should (org-sta-fh--grade? 10))
-  (should (org-sta-fh--grade? 10.5))
-  (should-not (org-sta-fh--grade? 21))
-  (should-not (org-sta-fh--grade? 20.5))
-  (should-not (org-sta-fh--grade? 10.1))
-  (should-not (org-sta-fh--grade? 10.51))
-  (should-not (org-sta-fh--grade? -1)))
+  "Test we can identify grades."
+  (should (org-sta-fh--grade? "0"))
+  (should (org-sta-fh--grade? "20"))
+  (should (org-sta-fh--grade? "10"))
+  (should (org-sta-fh--grade? "10.5"))
+  (should-not (org-sta-fh--valid-grade? "-1")))
+
+(ert-deftest differentiate-students-grades ()
+  "Test we can differentiate a student identifier from a grade.
+(We don't guarantee that the other way doesn't work.)"
+  (should (org-sta-fh--student-identifier? "123456789"))
+  (should-not (org-sta-fh--student-identifier? "10"))
+  (should-not (org-sta-fh--student-identifier? "10.5")))
+
+(ert-deftest valid-grades ()
+  "Test we can identify valid grades on the 20-point scale."
+  (should (org-sta-fh--valid-grade? 0))
+  (should (org-sta-fh--valid-grade? 20))
+  (should (org-sta-fh--valid-grade? 10))
+  (should (org-sta-fh--valid-grade? 10.5))
+  (should-not (org-sta-fh--valid-grade? 21))
+  (should-not (org-sta-fh--valid-grade? 20.5))
+  (should-not (org-sta-fh--valid-grade? 10.1))
+  (should-not (org-sta-fh--valid-grade? 10.51))
+  (should-not (org-sta-fh--valid-grade? -1)))
+
+(ert-deftest header ()
+  "Test we can parse headers."
+  (let ((sgs (org-sta-fh--parse-headline "123456789")))
+    (should (and (equal (car sgs) (list "123456789"))
+		 (null (cdr sgs)))))
+  (let ((sgs (org-sta-fh--parse-headline "123456789 10.5")))
+    (should (and (equal (car sgs) (list "123456789"))
+		 (= (cdr sgs) 10.5))))
+  (let ((sgs (org-sta-fh--parse-headline "123456789 234567890")))
+    (should (and (equal (car sgs) (list "123456789" "234567890"))
+		 (null (cdr sgs)))))
+  (let ((sgs (org-sta-fh--parse-headline "123456789 234567890 10.5")))
+    (should (and (equal (car sgs) (list "123456789" "234567890"))
+		 (= (cdr sgs) 10.5)))))

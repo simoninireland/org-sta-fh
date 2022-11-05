@@ -31,6 +31,10 @@
 
 ;; ---------- TYpe and sanity check function ----------
 ;; (At the moment these are very tied to St Andrews standards.)
+;; The only constraint is that we can differentiuate grades from
+;; student identifiers. More precisely, if we recognise an identifier
+;; it definitely /isn't/ a grade. It could be the case, however, that
+;; an identifier matches the grade regexp.
 
 (defun org-sta-fh--student-identifier? (student)
   "Check whether STUDENT has the form of a student identifier.
@@ -41,19 +45,72 @@ long-standing students, anyway)."
   (string-match-p (rx (seq bol (= 9 digit) eol)) student))
 
 (defun org-sta-fh--grade? (grade)
-  "Check that GRADE is a valid student grade.
+  "Check that GRADE is a valid grade (syntactically).
 
-St Andrews grades lie between 0 and 20 inclusive in units of
+Grades just need to be strings that represent real numbers."
+  (string-match-p (rx (seq bol (seq (one-or-more digit)
+				    (opt (seq "." (zero-or-more digit)))) eol)) grade))
+
+(defun org-sta-fh--valid-grade? (grade)
+  "Check that GRADE is a valid grade (semantically).
+
+Return the grade if it is valid. St Andrews grades are
+numbers that lie between 0 and 20 inclusive in units of
 0.5."
-  (and (>= grade 0)                                   ; grade range
-       (<= grade 20)
-       (= (mod (* grade 10) 5) 0)                     ; only whole or half-points
-       (= (- grade (* 0.5 (round (/ grade 0.5)))))))  ; only 1dp
+  (let ((g (if (numberp grade)
+	       grade
+	     (string-to-number grade))))
+    (if (and (>= g 0)				   ; grade range
+	     (<= g 20)
+	     (= (mod (* g 10) 5) 0)                ; only whole or half-points
+	     (= (- g (* 0.5 (round (/ g 0.5))))))  ; only 1dp
+	g)))
 
 
 ;; ---------- Extractor helper functions ----------
 
+(defun org-sta-fh--split-headline (h)
+  "Split H as a headline.
 
+Returns a cons cell consisting of a list of students and
+their grade, which may be nil if no grade is provided.
+No checks are made on the validity of the student identifiers
+or grades: this is done in `org-sta-fh--parse-headline'.."
+  (let* ((es (s-split (rx (one-or-more (or " " ","))) h t))
+	 (n (length es)))
+    (cond ((= n 0)
+	   nil)
+	  ((= n 1)                                  ; no students or grades
+	   (cons es nil))                           ; one student, no grade
+	  ((org-sta-fh--student-identifier? (car (last es)))
+	   (cons es nil))                           ; student(s) with no grade
+	  (t
+	   (cons (butlast es) (car (last es)))))))  ; students(s) with grade
+
+(defun org-sta-fh--parse-headline (h)
+  "Parse H as a headline and check result for validity.
+
+Returns a cons cell containing a list of (valid) students
+and either a valid grade or nil if none was provided."
+  (let* ((sgs (org-sta-fh--split-headline h))
+	 (students (car-safe sgs))
+	 (grade (cdr-safe sgs)))
+    (if (null sgs)
+	nil
+      (progn
+	;; check all student identifiers are valid
+	(mapcar #'(lambda (student)
+		    (if (not (org-sta-fh--student-identifier? student))
+			(error (format "Bad student identifier '%s'" student))))
+		students)
+
+	(if (null grade)
+	    (cons students nil)
+	  ;; convert grade to number and check it;s valid
+	  (let ((g (org-sta-fh--valid-grade? grade)))
+	    (if (null g)
+		(error (format "Invalid grade '%s'" grade))
+	      (cons students g))))))))
 
 
 ;; ---------- Extract feedback records ----------
@@ -61,15 +118,6 @@ St Andrews grades lie between 0 and 20 inclusive in units of
 (defun org-sta-fh--extract-feedback (tree feedback)
   "Extract feedback and grades from an org tree TREE into FEEDBACK."
   (org-element-map tree '(headline paragraph)))
-
-
-
-
-(save-excursion
-  (set-buffer "test-feedback.org")
-  (goto-char (point-min))
-  (let ((tree (org-element-parse-buffer)))
-    tree))
 
 
 (provide 'org-sta-fh-org)
