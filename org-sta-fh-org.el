@@ -31,8 +31,8 @@
 
 ;; ---------- TYpe and sanity check function ----------
 ;; (At the moment these are very tied to St Andrews standards.)
-;; The only constraint is that we can differentiuate grades from
-;; student identifiers. More precisely, if we recognise an identifier
+;; The only constraint is that we can differentiate grades from
+;; student identifiers. More precisely, if we recognise an identifier,
 ;; it definitely /isn't/ a grade. It could be the case, however, that
 ;; an identifier matches the grade regexp.
 
@@ -44,19 +44,11 @@ represented as a string as it can contain leading zeros (for very
 long-standing students, anyway)."
   (string-match-p (rx (seq bol (= 9 digit) eol)) student))
 
-(defun org-sta-fh--grade? (grade)
-  "Check that GRADE is a valid grade (syntactically).
-
-Grades just need to be strings that represent real numbers."
-  (string-match-p (rx (seq bol (seq (one-or-more digit)
-				    (opt (seq "." (zero-or-more digit)))) eol)) grade))
-
 (defun org-sta-fh--valid-grade? (grade)
-  "Check that GRADE is a valid grade (semantically).
+  "Check that GRADE is a valid grade.
 
-Return the grade if it is valid. St Andrews grades are
-numbers that lie between 0 and 20 inclusive in units of
-0.5."
+Return the grade if it is valid, nil if not. St Andrews grades
+are numbers that lie between 0 and 20 inclusive in units of 0.5."
   (let ((g (if (numberp grade)
 	       grade
 	     (string-to-number grade))))

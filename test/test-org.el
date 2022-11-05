@@ -42,14 +42,6 @@
   (should (not (org-sta-fh--student-identifier? "123456789 ")))
   (should (not (org-sta-fh--student-identifier? "sd80"))))
 
-(ert-deftest grades ()
-  "Test we can identify grades."
-  (should (org-sta-fh--grade? "0"))
-  (should (org-sta-fh--grade? "20"))
-  (should (org-sta-fh--grade? "10"))
-  (should (org-sta-fh--grade? "10.5"))
-  (should-not (org-sta-fh--valid-grade? "-1")))
-
 (ert-deftest differentiate-students-grades ()
   "Test we can differentiate a student identifier from a grade.
 (We don't guarantee that the other way doesn't work.)"
@@ -61,6 +53,7 @@
   "Test we can identify valid grades on the 20-point scale."
   (should (org-sta-fh--valid-grade? 0))
   (should (org-sta-fh--valid-grade? 20))
+  (should (org-sta-fh--valid-grade? "20"))      ; we allow strings as well
   (should (org-sta-fh--valid-grade? 10))
   (should (org-sta-fh--valid-grade? 10.5))
   (should-not (org-sta-fh--valid-grade? 21))
@@ -74,6 +67,7 @@
   (let ((sgs (org-sta-fh--parse-headline "123456789")))
     (should (and (equal (car sgs) (list "123456789"))
 		 (null (cdr sgs)))))
+  (should-error (org-sta-fh--parse-headline "10.5"))
   (let ((sgs (org-sta-fh--parse-headline "123456789 10.5")))
     (should (and (equal (car sgs) (list "123456789"))
 		 (= (cdr sgs) 10.5))))
