@@ -29,118 +29,75 @@
 ;;
 ;; We store feedback in a hash table for speed compared to alists.
 ;; The hash table is keyed by student identifier; each value is a
-;; cons cell consisting of the feedback and the grade.
+;; cons cell consisting of a b uffer for the feedback and the grade.
 
 ;;; Code:
 
-;; ---------- Construction ----------
+;; ---------- Data structures ----------
 
-(defun org-sta-fh--make-feedback ()
-  "Make a feedback structure."
-  (make-hash-table :size 100))
+(defvar org-sta-fh--feedback
+  (make-hash-table :size 100)
+  "Hash table mappoing student identifier to a buffer containing feedback.")
 
-(defun org-sta-fh--feedback? (feedback)
-  "Test FEEDBACK is a feedback structure.
-
-At the moment this just tests it's a hash table."
-  (hash-table-p feedback))
+(defvar org-sta-fh--grades
+  (make-hash-table :size 100)
+  "Hash table mapping student identifier to grade.")
 
 
-;; ---------- Formatting utilities ----------
+;; ---------- Process management ----------
 
-(defun org-sta-fh--ensure-trailing-blank-line (s)
-  "Ensure S ends with a trailing blank line."
-  (concat (s-trim-right s) "\n\n"))
+(defun org-sta-fh--start-grading ()
+  "Start grading."
+  (clrhash org-sta-fh--feedback)
+  (clrhash org-sta-fh--grades))
+
+(defun org-sta-fh--start-feedback ()
+  "Reset the feedback structure ready for a new student or group."
+  (clrhash org-sta-fh--feedback))
+
+(defun org-sta-fh--end-feedback ()
+  "Export the feedback for all the students."
+  (org-sta-fh--export-all-feedback))
+
+(defun org-sta-fh--end-grading ()
+  "Finish grading and export the grades file."
+  (org-sta-sh--export-grades))
 
 
 ;; ---------- Adding and retrieving feedback and grades ----------
 
-(defun org-sta-fh--set-feedback (student text feedback)
-  "Set TEXT as the feedback for STUDENT in FEEDBACK.
+(defun org-sta-fh--add-student (student grade)
+  "Create a feedback record for a STUDENT with the given GRADE.
 
-If there is already feedback for this student, TEXT is appended to it."
-  (let ((fb (gethash student feedback)))
-    (if fb
-	;; existing feedback or grade, append to it
-	(let* ((old-text (car fb))
-	       (grade (cdr fb))
-	       (new-text (if (null old-text)
-			     text
-			   (org-sta-fh--ensure-trailing-blank-line (concat old-text text)))))
-	  (puthash student (cons new-text grade) feedback))
+The feedback is left empty."
+  ;; check whether student already exists
+  (if (gethash student org-sta-fh--feedback)
+      (error (format "Student %s already exists")))
 
-      ;; no existing feedback, save this as the text with a nil grade
-      (puthash student (cons (org-sta-fh--ensure-trailing-blank-line text) nil) feedback))))
+  ;; create a new feedback buffer
+  (let ((buf (generate-new-buffer (format "%s.org" student))))
+    (puthash student buf org-sta-fh--feedback))
 
-(defun org-sta-fh--set-grade (student grade feedback)
-  "Set GRADE as the grade for STUDENT in FEEDBACK.
+  ;; create a grade entry
+  (puthash student buf org-sta-fh--grades))
 
-If there is already feedback for this student, it is preserved."
-  (let ((fb (gethash student feedback)))
-    (if fb
-	;;, existing feedback or grade, replace it
-	(let* ((old-text (car fb)))
-	  (puthash student (cons old-text grade) feedback))
+(defun org-sta-fh--get-feedback (student)
+  "Return the feedback for STUDENT."
+  (gethash student org-sta-fh--feedback))
 
-      ;; no existing feedback, save this as the grade with empty feedback
-      (puthash student (cons nil grade) feedback))))
+(defun org-sta-fh--get-grade (student)
+  "Return the grade for STUDENT."
 
-(defun org-sta-fh--get-feedback (student feedback)
-  "Return the feedback for STUDENT in FEEDBACK.
+  (gethash student org-sta-fh--grades))
 
-The feedback may be nil if none has been set.Any trailing
-whitespace is trimmer"
-  (let ((fb (gethash student feedback)))
-    (if (null fb)
-	nil
-      (if (null (car fb))
-	  nil
-	(s-trim-right (car fb))))))
-
-(defun org-sta-fh--get-grade (student feedback)
-  "Return the grade for STUDENT in FEEDBACK.
-
-The grade may be nil if none has been set."
-  (let ((fb (gethash student feedback)))
-    (if (null fb)
-	nil
-      (cdr fb))))
-
-
-;; ---------- Consistency checks ----------
-
-(defun org-sta-fh--students-without-feedback (feedback)
-  "Returns a list of students without feedback in FEEDBACK."
-  (let ((without ()))
-    (maphash #'(lambda (student fb)
-		 (if (null (car fb))
-		     (push student without)))
-	     feedback)
-    without))
-
-(defun org-sta-fh--students-without-grades (feedback)
-  "Returns a list of students without grades in FEEDBACK."
-  (let ((without ()))
-    (maphash #'(lambda (student fb)
-		 (if (null (cdr fb))
-		     (push student without)))
-	     feedback)
-    without))
-
-(defun org-sta-fh--check-feedback-and-grades (feedback)
-  "Do consistency checks on FEEDBACK.
-
-This checks that all students have both a grade and some feedback.
-It rewturns t if everything has been completed. It raises an
-error if there is missing data."
-  (let ((wfs (org-sta-fh--students-without-feedback feedback)))
-    (if (> (length wfs) 0)
-	(error "Students without feedback: %s" (s-join ", " wfs))))
-  (let ((wgs (org-sta-fh--students-without-grades feedback)))
-    (if (> (length wgs) 0)
-	(error "Students without grades: %s" (s-join ", " wgs))))
-  t)
-
+(defun org-sta-fh--add-feedback (student feedback)
+  "Add FEEDBACK for STUDENT."
+  (let ((buf (org-sta-fh--get-feedback student)))
+    (save-excursion
+      (with-current-buffer buf
+	(goto-char (point-max))
+	(insert "\n\n")
+	(insert feedback)))))
 
 
 ;; ---------- Export ----------
@@ -149,8 +106,8 @@ error if there is missing data."
   "Return the filename used to store feedback for STUDENT."
   (concat (student ".txt")))
 
-(defun org-sta-fh--grades-file-name (feedback)
-  "Return the filename used to store grades from FEEDBACK.
+(defun org-sta-fh--grades-file-name ()
+  "Return the filename used to store grades.
 
 At present this is always 'grades.csv'"
   "grades.csv")
@@ -159,34 +116,30 @@ At present this is always 'grades.csv'"
   "Export STUDENT's feedback as held in FEEDBACK.
 
 The filename is determined by `org-sta-fh--feedback-file-name'."
-  (let ((text (org-sta-fh--get-feedback student feedback))
-	(fn (org-sta-fh--feedback-file-name student)))
-    (with-temp-buffer
-      (insert text)
-      (write-file fn))))
+  (let* ((buf (org-sta-fh--get-feedback student))
+	 (fn (org-sta-fh--feedback-file-name student)))
+    (save-excursion
+      (with-current-buffer buf
+	(let ((export (org-ascii-export-to-ascii)))
+	  (with-current-buffer export
+	    (write-file fn)))))))
 
-(defun org-sta-fh--export-all-feedback (feedback)
-  "Export all feddback from FEEDBACK."
-  (maphash #'(lambda (student fb)
-	       (org-sta-fh--export-feedback student feedback))
-	   feedback))
+(defun org-sta-fh--export-all-feedback ()
+  "Export all fedback."
+  (maphash (lambda (student fb)
+	       (org-sta-fh--export-feedback student))
+	   org-sta-fh--feedback))
 
-(defun org-sta-fh--export-grades (feedback)
-  "Export all grades from FEEDBACK.
+(defun org-sta-fh--export-grades ()
+  "Export all grades.
 
 The filename is determined by `org-sta-fh--grades-file-name'."
   (let ((fn (org-sta-fh--grades-file-name feedback)))
     (with-temp-buffer
-      (maphash #'(lambda (student fb)
-		   (let ((grade (cdr fb)))
-		     (insert (concat student "," grade ",,\n"))))
-	       feedback)
+      (maphash (lambda (student grade)
+		 (insert (concat student "," grade ",,\n")))
+	       org-sta-fh--grades)
       (write-file fn))))
-
-(defun org-sta-fh--export (feedback)
-  "Export all grades and feedback in FEEDBACK."
-  (org-sta-fh--export-grades feedback)
-  (org-sta-fh--export-all-feedback feedback))
 
 
 (provide 'org-sta-fh-feedback)
