@@ -45,6 +45,14 @@ The tree is exported to a set of files in a directory:
 - One file called `grades.csv` containing the grades in CSV format,
   first column the student identifier, second column the grade
 
+To be done
+----------
+
+- Put the feedback and grades somewhere user-selected
+- Handle feedback for groups of students, with group and individual
+  feedback and grades
+- Automate upload to MMS
+
 Acknowledgements
 ----------------
 
