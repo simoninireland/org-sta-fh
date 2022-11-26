@@ -2,9 +2,9 @@ org-sta-fh: A St Andrews feedback help for org mode
 ===================================================
 
 This is a simple Emacs package to help when bulk-uploading feedback on
-student assignments from a document maintained using [Emacs org
-mode](https://orgmode.org). It's intended specifically for use within
-the [University of St Andrews][https://www.st-andrews.ac.uk) with our
+student assignments from a document maintained using `Emacs org
+mode <https://orgmode.org`_. It's intended specifically for use within
+the `University of St Andrews <https://www.st-andrews.ac.uk>`_ with our
 MMS module management system, but could be adapted to other systems.
 It's also a useful exploration of how to manipulate org-mode
 documents.
@@ -18,9 +18,6 @@ tasks are as follows:
 
 - Write feedback for individual students
 - Assign a grade to each student
-- If it is a group assignment, apply common feedback and grades to
-  everyone in the group, but possibly add additional individual
-  feedback and a different grade to some or all students
 
 Org mode
 --------
@@ -34,19 +31,9 @@ identifier and their grade. (In St Andrews the unique identifiers are
 matriculation numbers, and the grades adhere to our common 20-point
 scale.) Under that heading is the feedback for the student.
 
-If the feedback is for a group of students, the heading consists of
-their identifiers, either space- or comma-separated, followed by their
-common grade. The text below is the common feedback. If there are
-sub-headings, these are expected to follow the same structure (one or
-more identifiers and a grade). Any feedback in this tree will be
-appended to the common feedback, and the grade will be used instead of
-the common grade. (Note to self: could add a +/- to change the grade
-rather than replace it?)
-
-The workflow is therefore to create headings for students (or groups),
-decide on the feedback, and then add the grade to the heading. The
-results is a tree containing sub-headings containing feedback and
-grades.
+The workflow is therefore to create headings for students, decide on
+the feedback, and then add the grade to the heading. The results is a
+tree containing sub-headings containing feedback and grades.
 
 Export format
 -------------
