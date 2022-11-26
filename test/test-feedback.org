@@ -2,13 +2,13 @@
 
   Some notes (to be ignored).
 
-** 12345678 18
+** 123456789 18
 
    Decent work.
 
    Could do better.
 
-** 23456788 5
+** 234567888 5.5
 
    Not decent work.
 
