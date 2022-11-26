@@ -3,7 +3,7 @@ org-sta-fh: A St Andrews feedback helper for org mode
 
 This is a simple Emacs package to help when bulk-uploading feedback on
 student assignments from a document maintained using `Emacs org
-mode <https://orgmode.org`_. It's intended specifically for use within
+mode <https://orgmode.org>`_. It's intended specifically for use within
 the `University of St Andrews <https://www.st-andrews.ac.uk>`_ with our
 MMS module management system, but could be adapted to other systems.
 It's also a useful exploration of how to manipulate org-mode
