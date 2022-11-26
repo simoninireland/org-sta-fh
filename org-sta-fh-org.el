@@ -36,7 +36,7 @@
 ;; it definitely /isn't/ a grade. It could be the case, however, that
 ;; an identifier matches the grade regexp.
 
-(defvar org-sta-sh--student-identifier-regexp
+(defvar org-sta-fh--student-identifier-regexp
   (rx (seq bol (= 9 digit) eol))
   "Regexp matching a student identifier.
 
@@ -44,11 +44,11 @@ The St Andrews student identifier is a 9-digit matriculation number,
 represented as a string as it can contain leading zeros (for very
 long-standing students, anyway).")
 
-(defvar org-sta-sh--grade-regexp
-  (rx (seq bol (one-or-more digit (opt (seq "." (one-or-more digit)))) eol))
+(defvar org-sta-fh--grade-regexp
+  (rx (seq bol (one-or-more digit) (opt (seq "." digit)) eol))
   "Regexp matching a grade.
 
-The St Andrews grades are simply real numbers.")
+The St Andrews grades are simply real numbers with at most one decimal place.")
 
 (defun org-sta-fh--valid-student-identifier? (student)
   "Check whether STUDENT has the form of a valid student identifier."
@@ -57,20 +57,20 @@ The St Andrews grades are simply real numbers.")
 (defun org-sta-fh--valid-grade? (grade)
   "Check that GRADE is a valid grade.
 
-Return the grade if it is valid, nil if not. St Andrews grades
+Return the grade (as a string) if it is valid, nil if not. St Andrews grades
 are numbers that lie between 0 and 20 inclusive in units of 0.5."
   (let ((g (if (numberp grade)
 	       grade
 	     (if (string-match-p org-sta-fh--grade-regexp grade)
 		 (string-to-number grade)
 	       nil))))
-    (if (null g)
-	nil
-      (if (and (>= g 0)				     ; grade range
-	       (<= g 20)
-	       (= (mod (* g 10) 5) 0)                ; only whole or half-points
-	       (= (- g (* 0.5 (round (/ g 0.5))))))  ; only 1dp
-	  g))))
+    (cond ((null g)
+	   nil)
+	  ((and (>= g 0)			      ; grade range
+		(<= g 20)
+		(= (mod (* g 10) 5) 0)                ; only whole or half-points
+		(= (- g (* 0.5 (round (/ g 0.5))))))  ; only 1dp
+	   (number-to-string g)))))
 
 
 ;; ---------- Parser helper functions ----------
@@ -84,16 +84,16 @@ The headline is split on space and comma boundaries"
 (defun org-sta-fh--parse-headline (h)
   "Parse H as a headline and check result for validity.
 
-Returns a cons cell containing a list of (valid) students
+Returns a list containing a list of (valid) students
 and a (valid) grade."
-  (let* ((es (org-sta-fh--split-headline h)))
+  (let* ((es (org-sta-fh--split-headline (org-element-property :raw-value h))))
     (if (< (length es) 2)
 	(error "Need at least one student and one grade in headline")
       (let ((students (butlast es))
 	    (grade (car (last es))))
 	;; check all student identifiers are valid
 	(mapcar (lambda (student)
-		  (if (not (org-sta-fh--student-identifier? student))
+		  (if (not (org-sta-fh--valid-student-identifier? student))
 		      (error (format "Invalid student identifier '%s'" student))))
 		students)
 
@@ -101,22 +101,13 @@ and a (valid) grade."
 	(let ((g (org-sta-fh--valid-grade? grade)))
 	    (if (null g)
 		(error (format "Invalid grade '%s'" grade))
-	      (cons students g)))))))
 
-(defun org-sta-fh--headline-tagged-for-feedback (headline)
-  "Test whether the given HEADLINE is tagged for feedback.
+	      ;; if everything is in order, return a list of students and their grade
+	      (append students (list g))))))))
 
-Feedback headlines are tagged 'STUDENT' or 'GROUP' (case-insensitive).
-Return the symbol ':student', ':group', or nil."
-  (let ((tags (org-element-property :tags headline)))
-    (dolist (t tags)
-      (let ((tag (s-downcase t)))
-	(cond ((s-equals? tag "student")
-	       :student)
-	      ((s-equals? tag "group")
-	       :group)
-	      (t
-	       nil))))))
+(defun org-sta-fh--feedback-for-student? (ssg)
+  "Test whether the parsed headline SSG refers to a single student."
+  (equal (length ssg) 2))
 
 
 ;; ---------- Org interface ----------
@@ -124,45 +115,66 @@ Return the symbol ':student', ':group', or nil."
 (defun org-sta-fh--find-headline-at-point (tree)
   "Find the element in TREE corresponding to point.
 
-This assumes that TREE is the parser tree corresponding to
-thew current buffer. Return nil if point is not at a headline."
+This assumes that TREE is the parse tree corresponding to
+the current buffer. Return nil if point is not at a headline."
   (let ((place (org-element-property :begin (org-element-at-point))))
     (org-element-map tree '(headline)
       (lambda (e)
-	(if (equal (org-element-property :begin e) place)
+	(if (= (org-element-property :begin e) place)
 	    e))
       nil t)))
 
-(defun org-sta-fh--parse-student (tree)
-  "Parse a single student's feedback and grade from TREE."
-  (let* ((sg (org-sta-fh--parse-headline (car (org-element-property :title tree))))
-	 (student (if (> (length (car sg)) 1)
-		      (error "Expected only a single student")
-		    (caar sg)))
-	 (grade (cdr sg)))
-    ;; create the feedback struture
-    (princ (format "Student %s grade %f" student grade))
-    (org-sta-fh--add-student student grade)
+(defun org-sta-fh--export-as-string ()
+  "Export the string corresponding to the current sub-tree in the current buffer.
 
-    ;; extract the content
-    (dolist (e (org-element-contents tree))
-      (if (and (eq (org-element-type 'headline))
-	       (let ((tag (s-downcase (car-safe (org-element-property :tags tree)))))))))
-    ))
+We tweak the export parameters to avoid adding headings such as author
+and table of contents, and trim whitespace."
+  (save-excursion
+    (let* ((org-export-with-title nil)
+	   (org-export-with-author nil)
+	   (org-export-with-toc nil)
+	   (buf (org-ascii-export-as-ascii nil t))
+	   (feedback (with-current-buffer buf
+		       (s-trim (buffer-string)))))
+      (kill-buffer buf)
+      feedback)))
+
+(defun org-sta-fh--parse-student (student grade tree)
+  "Parse feedback for a single STUDENT and GRADE from TREE.
+
+Because this is feedback for a single student we simply export the
+entire sub-tree as feedback, without looking inside for any other
+structure."
+  (princ (format "Student %s grade %s" student grade))
+  (org-sta-fh--add-student student grade)
+
+  ;; extract the content, writing it into the student's feedback buffer
+  (let ((feedback (org-sta-fh--export-as-string)))
+    (princ feedback)
+    (org-sta-fh--add-feedback student feedback)))
+
+(defun org-sta-fh--parse-subtree (tree)
+  "Construct the feedback defined in TREE.
+
+Point should be placed at the start of the tree's headline."
+  (let ((ssg (org-sta-fh--parse-headline tree)))
+    (cond ((org-sta-fh--feedback-for-student? ssg)
+	   (org-sta-fh--parse-student (car ssg) (cadr ssg) tree))
+	  (t
+	   (error "Not a single student's feedback")))))
 
 (defun org-sta-fh--parse-tree (tree)
-  "Construct the feedback defined in TREE."
-  (pcase (org-sta-fh--headline-tagged-for-feedback tree)
-    (:student (org-sta-fh--parse-student tree))
-    (:group (org-sta-fh--parse-group tree))
-    (_ (error "Tree not tagged for feedback"))))
+  "Extract feedback and grades from the org TREE.
 
-
-;; ---------- Extract feedback records ----------
-
-(defun org-sta-fh--extract-feedback (tree feedback)
-  "Extract feedback and grades from an org tree TREE into FEEDBACK."
-  (org-element-map tree '(headline)))
+Feedback is taken from headlines at one level below that
+of TREE, all of which must have correctly-parsing headlines."
+  (let ((outermost (org-element-property :level tree)))
+    (org-element-map tree '(headline)
+      (lambda (e)
+	(when (= (org-element-property :level e) (1+ outermost))
+	  ;; headline is for feedback, parse the sub-tree
+	  (goto-char (org-element-property :begin e))
+	  (org-sta-fh--parse-subtree e))))))
 
 
 (provide 'org-sta-fh-org)

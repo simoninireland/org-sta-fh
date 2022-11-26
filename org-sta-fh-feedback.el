@@ -34,34 +34,37 @@
 ;;; Code:
 
 ;; ---------- Data structures ----------
+;; :test 'equal because student identifiers are strings
 
 (defvar org-sta-fh--feedback
-  (make-hash-table :size 100)
+  (make-hash-table :size 10 :test 'equal)
   "Hash table mappoing student identifier to a buffer containing feedback.")
 
 (defvar org-sta-fh--grades
-  (make-hash-table :size 100)
+  (make-hash-table :size 100 :test 'equal)
   "Hash table mapping student identifier to grade.")
 
 
 ;; ---------- Process management ----------
+
+(defun org-sta-fh--cleanup-buffers ()
+  "Clean up all the feedback buffers."
+  (maphash (lambda (_ buf)
+	     (kill-buffer buf))
+	   org-sta-fh--feedback))
 
 (defun org-sta-fh--start-grading ()
   "Start grading."
   (clrhash org-sta-fh--feedback)
   (clrhash org-sta-fh--grades))
 
-(defun org-sta-fh--start-feedback ()
-  "Reset the feedback structure ready for a new student or group."
-  (clrhash org-sta-fh--feedback))
-
-(defun org-sta-fh--end-feedback ()
-  "Export the feedback for all the students."
-  (org-sta-fh--export-all-feedback))
-
 (defun org-sta-fh--end-grading ()
   "Finish grading and export the grades file."
-  (org-sta-sh--export-grades))
+  (org-sta-fh--export-all-feedback)
+  (org-sta-fh--export-grades)
+
+  ;; clean up the workings
+  (org-sta-fh--cleanup-buffers))
 
 
 ;; ---------- Adding and retrieving feedback and grades ----------
@@ -72,22 +75,21 @@
 The feedback is left empty."
   ;; check whether student already exists
   (if (gethash student org-sta-fh--feedback)
-      (error (format "Student %s already exists")))
+      (error (format "Student %s already exists" student)))
 
   ;; create a new feedback buffer
-  (let ((buf (generate-new-buffer (format "%s.org" student))))
+  (let ((buf (generate-new-buffer (format "%s.txt" student))))
     (puthash student buf org-sta-fh--feedback))
 
   ;; create a grade entry
-  (puthash student buf org-sta-fh--grades))
+  (puthash student grade org-sta-fh--grades))
 
 (defun org-sta-fh--get-feedback (student)
-  "Return the feedback for STUDENT."
+  "Return the feedback buffer for STUDENT."
   (gethash student org-sta-fh--feedback))
 
 (defun org-sta-fh--get-grade (student)
   "Return the grade for STUDENT."
-
   (gethash student org-sta-fh--grades))
 
 (defun org-sta-fh--add-feedback (student feedback)
@@ -96,7 +98,8 @@ The feedback is left empty."
     (save-excursion
       (with-current-buffer buf
 	(goto-char (point-max))
-	(insert "\n\n")
+	(if (> (point) 0)
+	    (insert "\n\n"))
 	(insert feedback)))))
 
 
@@ -104,7 +107,7 @@ The feedback is left empty."
 
 (defun org-sta-fh--feedback-file-name (student)
   "Return the filename used to store feedback for STUDENT."
-  (concat (student ".txt")))
+  (concat student ".txt"))
 
 (defun org-sta-fh--grades-file-name ()
   "Return the filename used to store grades.
@@ -112,29 +115,27 @@ The feedback is left empty."
 At present this is always 'grades.csv'"
   "grades.csv")
 
-(defun org-sta-fh--export-feedback (student feedback)
-  "Export STUDENT's feedback as held in FEEDBACK.
+(defun org-sta-fh--export-feedback (student)
+  "Export STUDENT's feedback.
 
 The filename is determined by `org-sta-fh--feedback-file-name'."
-  (let* ((buf (org-sta-fh--get-feedback student))
-	 (fn (org-sta-fh--feedback-file-name student)))
+  (let ((buf (org-sta-fh--get-feedback student))
+	(fn (org-sta-fh--feedback-file-name student)))
     (save-excursion
       (with-current-buffer buf
-	(let ((export (org-ascii-export-to-ascii)))
-	  (with-current-buffer export
-	    (write-file fn)))))))
+	(write-file fn)))))
 
 (defun org-sta-fh--export-all-feedback ()
-  "Export all fedback."
-  (maphash (lambda (student fb)
-	       (org-sta-fh--export-feedback student))
+  "Export all feedback."
+  (maphash (lambda (student _)
+	     (org-sta-fh--export-feedback student))
 	   org-sta-fh--feedback))
 
 (defun org-sta-fh--export-grades ()
   "Export all grades.
 
 The filename is determined by `org-sta-fh--grades-file-name'."
-  (let ((fn (org-sta-fh--grades-file-name feedback)))
+  (let ((fn (org-sta-fh--grades-file-name)))
     (with-temp-buffer
       (maphash (lambda (student grade)
 		 (insert (concat student "," grade ",,\n")))

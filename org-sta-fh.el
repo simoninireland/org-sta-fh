@@ -41,15 +41,17 @@
 
 ;; ---------- Public interface ----------
 
-(defun org-sta-fh-complete (feedback)
-  "Check the all the grading is done in FEEDBACK.
-
-This /doesn't/ check that we've graded all the students we should,
-but /does/ check that all students have a grade and feedback."
-  (org-sta-fh--check-feedback-and-grades feedback))
-
-(defun org-sta-fh-export-at-point ()
-  "Locate the tree at point and export it as feedback and grades.")
+(defun org-sta-fh-export-feedback-for-tree ()
+  "Create the grades and feedback for the org tree at point."
+  (interactive)
+  (let* ((tree (org-element-parse-buffer))
+	 (h (org-sta-fh--find-headline-at-point tree)))
+    (save-mark-and-excursion
+      (unwind-protect
+	  (progn
+	    (org-sta-fh--start-grading)
+	    (org-sta-fh--parse-tree h)))
+      (org-sta-fh--end-grading))))
 
 
 (provide 'org-sta-fh)
