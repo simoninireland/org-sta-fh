@@ -2,9 +2,9 @@ org-sta-fh: A St Andrews feedback helper for org mode
 =====================================================
 
 This is a simple Emacs package to help when bulk-uploading feedback on
-student assignments from a document maintained using `Emacs org
-mode <https://orgmode.org>`_. It's intended specifically for use within
-the `University of St Andrews <https://www.st-andrews.ac.uk>`_ with our
+student assignments from a document maintained using [Emacs org
+mode](https://orgmode.org). It's intended specifically for use within
+the [University of St Andrews](https://www.st-andrews.ac.uk) with our
 MMS module management system, but could be adapted to other systems.
 It's also a useful exploration of how to manipulate org-mode
 documents.
@@ -48,6 +48,6 @@ The tree is exported to a set of files in a directory:
 Acknowledgements
 ----------------
 
-This feedback helper is inspired by envy of Michael Young's `standalone
-feedback helper <https://github.com/mtorpey/FeedbackHelper>`_. It's a
+This feedback helper is inspired by envy of Michael Young's [standalone
+feedback helper](https://github.com/mtorpey/FeedbackHelper). It's a
 work in progress to bring this sort of functionality to Emacs.
