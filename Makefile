@@ -24,7 +24,7 @@ SOURCES_FILES = \
 	org-sta-fh-feedback.el
 
 # Unit tests
-SOURCES_TESTS =
+SOURCES_TESTS = \
 	test/test-feedback.el \
 	test/test-org.el
 
