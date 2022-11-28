@@ -41,7 +41,7 @@
 
 ;; ---------- Public interface ----------
 
-(defun org-sta-fh-export-feedback-for-tree ()
+(defun org-sta-fh-export-feedback-tree ()
   "Create the grades and feedback for the org tree at point."
   (interactive)
   (let* ((tree (org-element-parse-buffer))
