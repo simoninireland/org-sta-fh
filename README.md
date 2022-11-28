@@ -13,27 +13,14 @@ Use case
 --------
 
 You are grading a student assignment. Each student has uploaded a
-submission, possibly individual and possibly as part of a group. Your
-tasks are as follows:
+submission. Your tasks are as follows:
 
 - Write feedback for individual students
 - Assign a grade to each student
+- Upload the feedback and grades to MMS
 
-Org mode
---------
-
-Feedback is stored either in an org mode document or in a tree within
-a larger document. The top-level heading is the assignment title, and
-there may be text and notes below: these are ignored.
-
-For each student there is a heading containing their unique student
-identifier and their grade. (In St Andrews the unique identifiers are
-matriculation numbers, and the grades adhere to our common 20-point
-scale.) Under that heading is the feedback for the student.
-
-The workflow is therefore to create headings for students, decide on
-the feedback, and then add the grade to the heading. The results is a
-tree containing sub-headings containing feedback and grades.
+`org-sta-fh` takes a feedback and grades from the first two tasks and
+creates the files needed to complete the third.
 
 Installation
 ------------
@@ -101,6 +88,9 @@ directory and then produce three files there:
 The first two contain the feedback for the given students, in plain
 text. The last contains the grades as a CSV spreadsheet. These can
 then be bulk-uploaded directly to MMS.
+
+The feedback tree can be at any depth: all that matters is that the
+feedback sub-trees lie beneath it.
 
 To be done
 ----------
