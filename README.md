@@ -28,10 +28,12 @@ Clone the repo somewhere convenient, for example:
     cd ~/.emacs.d
     git clone git@github.com:simoninireland/org-sta-fh.git
 
-Add the downloaded directory to your Emacs load path by adding
-something like the following to your `.emacs` file:
+Add the downloaded directory to your Emacs load path and load the
+package by adding something like the following to your `.emacs`
+file:
 
     (add-to-list 'load-path (expand-file-name "~/.emacs.d/org-sta-fh"))
+    (require 'org-sta-fh)
 
 You can if you wish bind the top-level user interface functions to
 keys, again in `.emacs`:
