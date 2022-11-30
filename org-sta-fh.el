@@ -33,6 +33,7 @@
 ;; ---------- Dependencies ----------
 
 (require 's)
+(require 'f)
 (require 'org)
 
 (require 'org-sta-fh-feedback)
@@ -41,17 +42,20 @@
 
 ;; ---------- Public interface ----------
 
-(defun org-sta-fh-export-feedback-tree ()
-  "Create the grades and feedback for the org tree at point."
-  (interactive)
+(defun org-sta-fh-export-feedback-tree (dir)
+  "Export the grades and feedback files to directory DIR for the org tree at point."
+  (interactive "DFeedback directory: ")
   (let* ((tree (org-element-parse-buffer))
 	 (h (org-sta-fh--find-headline-at-point tree)))
     (save-mark-and-excursion
       (unwind-protect
 	  (progn
 	    (org-sta-fh--start-grading)
-	    (org-sta-fh--parse-tree h)))
-      (org-sta-fh--end-grading))))
+	    (org-sta-fh--parse-tree h)
+	    (org-sta-fh--end-grading dir))
+
+	;; delete any buffers we created
+	(org-sta-fh--cleanup-buffers)))))
 
 
 (provide 'org-sta-fh)
