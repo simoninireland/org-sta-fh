@@ -38,7 +38,7 @@
 
 (defvar org-sta-fh--feedback
   (make-hash-table :size 10 :test 'equal)
-  "Hash table mappoing student identifier to a buffer containing feedback.")
+  "Hash table mapping student identifier to a buffer containing feedback.")
 
 (defvar org-sta-fh--grades
   (make-hash-table :size 100 :test 'equal)
@@ -58,13 +58,10 @@
   (clrhash org-sta-fh--feedback)
   (clrhash org-sta-fh--grades))
 
-(defun org-sta-fh--end-grading ()
-  "Finish grading and export the grades file."
-  (org-sta-fh--export-all-feedback)
-  (org-sta-fh--export-grades)
-
-  ;; clean up the workings
-  (org-sta-fh--cleanup-buffers))
+(defun org-sta-fh--end-grading (dir)
+  "Finish grading and export the grades file to DIR."
+  (org-sta-fh--export-all-feedback dir)
+  (org-sta-fh--export-grades dir))
 
 
 ;; ---------- Adding and retrieving feedback and grades ----------
@@ -105,37 +102,37 @@ The feedback is left empty."
 
 ;; ---------- Export ----------
 
-(defun org-sta-fh--feedback-file-name (student)
-  "Return the filename used to store feedback for STUDENT."
-  (concat student ".txt"))
+(defun org-sta-fh--feedback-file-name (student dir)
+  "Return the filename used to store feedback for STUDENT in DIR."
+  (f-join dir (concat student ".txt")))
 
-(defun org-sta-fh--grades-file-name ()
-  "Return the filename used to store grades.
+(defun org-sta-fh--grades-file-name (dir)
+  "Return the filename used to store grades in DIR.
 
 At present this is always 'grades.csv'"
-  "grades.csv")
+  (f-join dir  "grades.csv"))
 
-(defun org-sta-fh--export-feedback (student)
-  "Export STUDENT's feedback.
+(defun org-sta-fh--export-feedback (student dir)
+  "Export STUDENT's feedback to directory DIR.
 
 The filename is determined by `org-sta-fh--feedback-file-name'."
   (let ((buf (org-sta-fh--get-feedback student))
-	(fn (org-sta-fh--feedback-file-name student)))
+	(fn (org-sta-fh--feedback-file-name student dir)))
     (save-excursion
       (with-current-buffer buf
 	(write-file fn)))))
 
-(defun org-sta-fh--export-all-feedback ()
+(defun org-sta-fh--export-all-feedback (dir)
   "Export all feedback."
   (maphash (lambda (student _)
-	     (org-sta-fh--export-feedback student))
+	     (org-sta-fh--export-feedback student dir))
 	   org-sta-fh--feedback))
 
-(defun org-sta-fh--export-grades ()
-  "Export all grades.
+(defun org-sta-fh--export-grades (dir)
+  "Export all grades to DIR.
 
 The filename is determined by `org-sta-fh--grades-file-name'."
-  (let ((fn (org-sta-fh--grades-file-name)))
+  (let ((fn (org-sta-fh--grades-file-name dir)))
     (with-temp-buffer
       (maphash (lambda (student grade)
 		 (insert (concat student "," grade ",,\n")))
