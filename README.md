@@ -59,7 +59,7 @@ Suppose you have the following feedback in org mode
        Not a great solution. The indenting was the least of your problems.
 
 (This is an example of a text format, not of good feedback
-practices&#x2026;) The feedback tree has a title and some header nodes,
+practices&#x2026;) The feedback tree has a title and some header notes,
 which are ignored. The sub-trees immediately beneath the main tree
 have a specific format, consisting of a student identifier and a
 grade, both of which need to confirm to the St Andrews standards
@@ -78,15 +78,18 @@ The first two contain the feedback for the given students, in plain
 text. The last contains the grades as a CSV spreadsheet. These can
 then be bulk-uploaded directly to MMS.
 
-The feedback tree can be at any depth: all that matters is that the
-feedback sub-trees lie beneath it.
+The feedback tree can start at any depth in an org file: all that
+matters is that the feedback sub-trees lie immediately beneath
+it. You can include any markup in the feedback that you like,
+including extra sub-headings: these will be exported to the
+feedback file.
 
 
 ## To be done
 
 -   Handle feedback for groups of students, with group and individual
     feedback and grades
--   Turn into a "proper" export backend
+-   Turn this into a "proper" export backend
 -   Automate upload to MMS
 
 
