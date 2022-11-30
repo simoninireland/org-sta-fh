@@ -52,7 +52,7 @@ The St Andrews grades are simply real numbers with at most one decimal place.")
 
 (defun org-sta-fh--valid-student-identifier? (student)
   "Check whether STUDENT has the form of a valid student identifier."
-  (string-match-p org-sta-sh--student-identifier-regexp student))
+  (string-match-p org-sta-fh--student-identifier-regexp student))
 
 (defun org-sta-fh--valid-grade? (grade)
   "Check that GRADE is a valid grade.
@@ -145,12 +145,10 @@ and table of contents, and trim whitespace."
 Because this is feedback for a single student we simply export the
 entire sub-tree as feedback, without looking inside for any other
 structure."
-  (princ (format "Student %s grade %s" student grade))
   (org-sta-fh--add-student student grade)
 
   ;; extract the content, writing it into the student's feedback buffer
   (let ((feedback (org-sta-fh--export-as-string)))
-    (princ feedback)
     (org-sta-fh--add-feedback student feedback)))
 
 (defun org-sta-fh--parse-subtree (tree)
