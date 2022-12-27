@@ -29,50 +29,6 @@
 
 ;;; Code:
 
-;; ---------- Type and sanity check function ----------
-;; (At the moment these are very tied to St Andrews standards.)
-;; The only constraint is that we can differentiate grades from
-;; student identifiers. More precisely, if we recognise an identifier,
-;; it definitely /isn't/ a grade. It could be the case, however, that
-;; an identifier matches the grade regexp.
-
-(defvar org-sta-fh--student-identifier-regexp
-  (rx (seq bol (= 9 digit) eol))
-  "Regexp matching a student identifier.
-
-The St Andrews student identifier is a 9-digit matriculation number,
-represented as a string as it can contain leading zeros (for very
-long-standing students, anyway).")
-
-(defvar org-sta-fh--grade-regexp
-  (rx (seq bol (one-or-more digit) (opt (seq "." digit)) eol))
-  "Regexp matching a grade.
-
-The St Andrews grades are simply real numbers with at most one decimal place.")
-
-(defun org-sta-fh--valid-student-identifier? (student)
-  "Check whether STUDENT has the form of a valid student identifier."
-  (string-match-p org-sta-fh--student-identifier-regexp student))
-
-(defun org-sta-fh--valid-grade? (grade)
-  "Check that GRADE is a valid grade.
-
-Return the grade (as a string) if it is valid, nil if not. St Andrews grades
-are numbers that lie between 0 and 20 inclusive in units of 0.5."
-  (let ((g (if (numberp grade)
-	       grade
-	     (if (string-match-p org-sta-fh--grade-regexp grade)
-		 (string-to-number grade)
-	       nil))))
-    (cond ((null g)
-	   nil)
-	  ((and (>= g 0)			      ; grade range
-		(<= g 20)
-		(= (mod (* g 10) 5) 0)                ; only whole or half-points
-		(= (- g (* 0.5 (round (/ g 0.5))))))  ; only 1dp
-	   (number-to-string g)))))
-
-
 ;; ---------- Parser helper functions ----------
 
 (defun org-sta-fh--split-headline (h)

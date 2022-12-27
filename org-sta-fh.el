@@ -37,6 +37,7 @@
 (require 'org)
 
 (require 'org-sta-fh-feedback)
+(require 'org-sta-fh-sta)
 (require 'org-sta-fh-org)
 
 
