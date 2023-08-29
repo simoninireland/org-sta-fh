@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; Definitions of St Andrews student identifiers (matirculaion
+;; Definitions of St Andrews student identifiers (matriculaion
 ;; numbers), grades, file structures, and helper functions.
 
 ;; The only constraint is that we can differentiate grades from
