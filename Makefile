@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Free Software Foundation, Inc.
+# Copyright (c) 2022--2023 Simon Dobson <simoninireland@gmail.com>
 
 # Author: Simon Dobson <simoninireland@gmail.com>
 # Maintainer: Simon Dobson <simoninireland@gmail.com>
@@ -23,7 +23,8 @@ MAIN_SOURCE_FILE = \
 	org-sta-fh.el
 LIBRARY_SOURCE_FILES = \
 	org-sta-fh-ids.el \
-	org-sta-fh-feedback.el
+	org-sta-fh-feedback.el \
+	org-sta-fh-org.el
 SOURCE_FILES = \
 	$(MAIN_SOURCE_FILE) \
 	$(LIBARRY_SOURCE_FILES)
