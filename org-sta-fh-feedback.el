@@ -1,6 +1,6 @@
-;;; org-sta-fh-feedback.el --- feedback data structure -*- lexical-binding: t -*-
+;;; org-sta-fh-feedback.el --- Feedback data structure -*- lexical-binding: t -*-
 
-;; Copyright (c) 2022 Simon Dobson <simoninireland@gmail.com>
+;; Copyright (c) 2022--2023 Simon Dobson <simoninireland@gmail.com>
 
 ;; Author: Simon Dobson <simoninireland@gmail.com>
 ;; Maintainer: Simon Dobson <simoninireland@gmail.com>
@@ -29,7 +29,7 @@
 ;;
 ;; We store feedback in a hash table for speed compared to alists.
 ;; The hash table is keyed by student identifier; each value is a
-;; cons cell consisting of a b uffer for the feedback and the grade.
+;; cons cell consisting of a buffer for the feedback and the grade.
 
 ;;; Code:
 
@@ -110,7 +110,7 @@ The feedback is left empty."
   "Return the filename used to store grades in DIR.
 
 At present this is always 'grades.csv'"
-  (f-join dir  "grades.csv"))
+  (f-join dir "grades.csv"))
 
 (defun org-sta-fh--export-feedback (student dir)
   "Export STUDENT's feedback to directory DIR.
