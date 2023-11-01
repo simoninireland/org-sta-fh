@@ -1,4 +1,4 @@
-;;; org-sta-fh-ids.el --- student identifiers and grades -*- lexical-binding: t -*-
+;;; org-sta-fh-ids.el --- Student identifiers and grades -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2022--2023 Simon Dobson <simoninireland@gmail.com>
 
