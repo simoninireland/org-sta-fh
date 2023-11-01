@@ -19,9 +19,14 @@
 # along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 # Source files
-SOURCES_FILES = \
-	org-sta-fh.el \
+MAIN_SOURCE_FILE = \
+	org-sta-fh.el
+LIBRARY_SOURCE_FILES = \
+	org-sta-fh-ids.el \
 	org-sta-fh-feedback.el
+SOURCE_FILES = \
+	$(MAIN_SOURCE_FILE) \
+	$(LIBARRY_SOURCE_FILES)
 
 # Unit tests
 SOURCES_TESTS = \
@@ -51,6 +56,7 @@ $(VENV):
 .PHONY: test
 test: env
 	$(RUN_EMACS) \
+	-l $(MAIN_SOURCE_FILE) \
 	$(SOURCES_TESTS:%=-l %) \
 	--eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 
@@ -58,7 +64,7 @@ test: env
 lint: env
 	$(RUN_EMACS) \
 	--eval "(progn (require 'package-lint)(package-lint-batch-and-exit))" \
-	$(SOURCES_FILES)
+	$(SOURCE_FILES)
 
 # Clean up the build
 .PHONY: clean
