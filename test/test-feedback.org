@@ -1,6 +1,6 @@
-* A sample results file
+* Single results
 
-  Some notes (to be ignored).
+  Common comments (to be added to everyone).
 
 ** 123456789 18
 
@@ -13,3 +13,16 @@
    Not decent work.
 
    Possibly couldn't do better.
+
+
+* Group results
+
+  Common comments
+
+*** 345678790 467812345 15
+
+    Meh
+
+*** 456789012 19
+
+    Yay!
