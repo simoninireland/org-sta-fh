@@ -1,4 +1,4 @@
-;;; org-sta-fh-org.el --- org mode interface -*- lexical-binding: t -*-
+;;; org-sta-fh-org.el --- Org mode interface -*- lexical-binding: t -*-
 
 ;; Copyright (c) 2022 Simon Dobson <simoninireland@gmail.com>
 
@@ -28,50 +28,6 @@
 ;; Interface to org mode.
 
 ;;; Code:
-
-;; ---------- Type and sanity check function ----------
-;; (At the moment these are very tied to St Andrews standards.)
-;; The only constraint is that we can differentiate grades from
-;; student identifiers. More precisely, if we recognise an identifier,
-;; it definitely /isn't/ a grade. It could be the case, however, that
-;; an identifier matches the grade regexp.
-
-(defvar org-sta-fh--student-identifier-regexp
-  (rx (seq bol (= 9 digit) eol))
-  "Regexp matching a student identifier.
-
-The St Andrews student identifier is a 9-digit matriculation number,
-represented as a string as it can contain leading zeros (for very
-long-standing students, anyway).")
-
-(defvar org-sta-fh--grade-regexp
-  (rx (seq bol (one-or-more digit) (opt (seq "." digit)) eol))
-  "Regexp matching a grade.
-
-The St Andrews grades are simply real numbers with at most one decimal place.")
-
-(defun org-sta-fh--valid-student-identifier? (student)
-  "Check whether STUDENT has the form of a valid student identifier."
-  (string-match-p org-sta-fh--student-identifier-regexp student))
-
-(defun org-sta-fh--valid-grade? (grade)
-  "Check that GRADE is a valid grade.
-
-Return the grade (as a string) if it is valid, nil if not. St Andrews grades
-are numbers that lie between 0 and 20 inclusive in units of 0.5."
-  (let ((g (if (numberp grade)
-	       grade
-	     (if (string-match-p org-sta-fh--grade-regexp grade)
-		 (string-to-number grade)
-	       nil))))
-    (cond ((null g)
-	   nil)
-	  ((and (>= g 0)			      ; grade range
-		(<= g 20)
-		(= (mod (* g 10) 5) 0)                ; only whole or half-points
-		(= (- g (* 0.5 (round (/ g 0.5))))))  ; only 1dp
-	   (number-to-string g)))))
-
 
 ;; ---------- Parser helper functions ----------
 
@@ -110,7 +66,32 @@ and a (valid) grade."
   (equal (length ssg) 2))
 
 
+;; ---------- Org tree generation ----------
+
+(defun org-sta-fh--insert-feedback-tree (title ids &optional depth)
+  "Insert a tree with TITLE at point.
+
+The student identifiers in IDS form sub-headings. The tree is
+at heading depth 1 by default, which can be changed with DEPTH."
+  ;; set defauilt depth if none provided
+  (if (or (null depth)
+	  (< depth 1))
+      (setq depth 1))
+
+  ;; insert heading
+  (newline)
+  (insert (format "%s %s\n\n" (apply #'concat (make-list depth "*")) title))
+
+  ;; insert sub-headings for submissions
+  (let ((subheading (apply #'concat (make-list (1+ depth) "*"))))
+    (dolist (id ids)
+      (insert (format "%s %s\n\n" subheading id)))))
+
+
 ;; ---------- Org interface ----------
+
+;; See https://orgmode.org/worg/dev/org-element-api.html for details
+;; of properties held within the parse tree objects.
 
 (defun org-sta-fh--find-headline-at-point (tree)
   "Find the element in TREE corresponding to point.
@@ -123,6 +104,15 @@ the current buffer. Return nil if point is not at a headline."
 	(if (= (org-element-property :begin e) place)
 	    e))
       nil t)))
+
+(defun org-sta-fh--find-containing-headline ()
+    "Find the headline in TREE containing point.
+
+This assumes that TREE is the parse tree corresponding to
+the current buffer. Return nil if point is not within a
+headline."
+    (save-excursion
+      (org-up-heading-safe)))
 
 (defun org-sta-fh--export-as-string ()
   "Export the string corresponding to the current sub-tree in the current buffer.
@@ -151,15 +141,22 @@ structure."
   (let ((feedback (org-sta-fh--export-as-string)))
     (org-sta-fh--add-feedback student feedback)))
 
+(defun org-sta-fh--parse-students (students grade tree)
+  "Use GRADE and TREE for all STUDENTS.
+
+This simply maps `org-sta-fh--parse-student' across STUDENTS."
+  (mapc (lambda (s) (org-sta-fh--parse-student s grade tree))
+	students))
+
+
 (defun org-sta-fh--parse-subtree (tree)
   "Construct the feedback defined in TREE.
 
 Point should be placed at the start of the tree's headline."
-  (let ((ssg (org-sta-fh--parse-headline tree)))
-    (cond ((org-sta-fh--feedback-for-student? ssg)
-	   (org-sta-fh--parse-student (car ssg) (cadr ssg) tree))
-	  (t
-	   (error "Not a single student's feedback")))))
+  (let* ((ssg (org-sta-fh--parse-headline tree))
+	 (grade (car (last ssg)))
+	 (students (butlast ssg)))
+    (org-sta-fh--parse-students students grade tree)))
 
 (defun org-sta-fh--parse-tree (tree)
   "Extract feedback and grades from the org TREE.
