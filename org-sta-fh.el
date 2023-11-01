@@ -1,6 +1,6 @@
-;;; org-sta-fh.el --- org-based bulk upload of feedback -*- lexical-binding: t -*-
+;;; org-sta-fh.el --- Org-based bulk upload of feedback -*- lexical-binding: t -*-
 
-;; Copyright (c) 2022 Simon Dobson <simoninireland@gmail.com>
+;; Copyright (c) 2022--2023 Simon Dobson <simoninireland@gmail.com>
 
 ;; Author: Simon Dobson <simoninireland@gmail.com>
 ;; Maintainer: Simon Dobson <simoninireland@gmail.com>
@@ -34,9 +34,11 @@
 
 (require 's)
 (require 'f)
+(require 'dash)
 (require 'org)
 
 (require 'org-sta-fh-feedback)
+(require 'org-sta-fh-ids)
 (require 'org-sta-fh-org)
 
 
@@ -56,6 +58,13 @@
 
 	;; delete any buffers we created
 	(org-sta-fh--cleanup-buffers)))))
+
+(defun org-sta-fh-build-feedback-tree (title dir)
+  "Build a feedback tree with header TITLE from the submissions in DIR."
+  (interactive "sTitle: \nDSubmissions directory: ")
+  (let* ((tree (org-element-parse-buffer)))
+    (save-excursion
+      (org-sta-fh--insert-feedback-tree title ids 1))))
 
 
 (provide 'org-sta-fh)
