@@ -1,6 +1,6 @@
 ;;; test-feedback.el --- Test feedback data structure -*- lexical-binding: t -*-
 
-;; Copyright (C) 2015-2022 Free Software Foundation, Inc.
+;; Copyright (c) 2022--2023 Simon Dobson <simoninireland@gmail.com>
 
 ;; Author: Simon Dobson <simoninireland@gmail.com>
 ;; Maintainer: Simon Dobson <simoninireland@gmail.com>
