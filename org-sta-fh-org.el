@@ -68,24 +68,58 @@ and a (valid) grade."
 
 ;; ---------- Org tree generation ----------
 
-(defun org-sta-fh--insert-feedback-tree (title ids &optional depth)
-  "Insert a tree with TITLE at point.
+(defun org-sta-fh--find-deepest-headline ()
+  "Find the headline containing point."
+  (cl-labels ((headline (e)
+		(pcase (org-element-type e)
+		  ('headline
+		   e)
+		  (_
+		   (if-let ((p (org-element-property :parent e)))
+		       (headline p))))))
+    (let ((e (org-element-at-point)))
+      (headline e))))
 
-The student identifiers in IDS form sub-headings. The tree is
-at heading depth 1 by default, which can be changed with DEPTH."
-  ;; set defauilt depth if none provided
-  (if (or (null depth)
-	  (< depth 1))
-      (setq depth 1))
 
-  ;; insert heading
-  (newline)
-  (insert (format "%s %s\n\n" (apply #'concat (make-list depth "*")) title))
+(defun org-sta-fh--headline-depth-at-point ()
+  "Find the headline depth of point.
 
-  ;; insert sub-headings for submissions
-  (let ((subheading (apply #'concat (make-list (1+ depth) "*"))))
-    (dolist (id ids)
-      (insert (format "%s %s\n\n" subheading id)))))
+Return 0 if there is no headline, meaning we're at top level."
+  (if-let ((h (org-sta-fh--find-deepest-headline)))
+      (org-element-property :level h)
+
+    ;; no headline, be consistent for top-level trees
+    0))
+
+
+(defun org-sta-fh--insert-feedback-tree (ids depth)
+  "Insert a feedback tree at point.
+
+The student identifiers in IDS form sub-headings one below DEPTH."
+  (let ((headline-prefix (apply #'concat (make-list (1+  depth) "*"))))
+    (cl-flet ((headline (id)
+		(newline)
+		(insert (format "%s %s\n" headline-prefix id))))
+
+      (mapc #'headline ids))))
+
+
+(defun org-sta-fh--ids-from-dir (dir)
+  "Extract all the student ids corresponding to files in DIR.
+
+The files can be files or directories."
+  (cl-labels ((ids-from-file-names (fns)
+		(if fns
+		    (let ((base (f-base (car fns))))
+		      (if (org-sta-fh--valid-student-identifier? base)
+			  ;; base of filename is a student id, return it
+			  (cons base (ids-from-file-names (cdr fns)))
+
+			;; not a filename, ignore
+			(ids-from-file-names (cdr fns)))))))
+
+    (let ((fns (f-entries dir)))
+      (ids-from-file-names fns))))
 
 
 ;; ---------- Org interface ----------
@@ -93,6 +127,7 @@ at heading depth 1 by default, which can be changed with DEPTH."
 ;; See https://orgmode.org/worg/dev/org-element-api.html for details
 ;; of properties held within the parse tree objects.
 
+;; sd: is this just a more complicated version of the function above?
 (defun org-sta-fh--find-headline-at-point (tree)
   "Find the element in TREE corresponding to point.
 
