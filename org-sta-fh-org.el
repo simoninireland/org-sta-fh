@@ -71,7 +71,10 @@ and a (valid) grade."
 ;; ---------- Org tree generation ----------
 
 (defun org-sta-fh--find-deepest-headline ()
-  "Find the headline containing point."
+  "Find the headline containing point
+
+Return 'nil' if point is at top-level, and so not within a
+headline.."
   (cl-labels ((headline (e)
 		(pcase (org-element-type e)
 		  ('headline
@@ -79,6 +82,7 @@ and a (valid) grade."
 		  (_
 		   (if-let ((p (org-element-property :parent e)))
 		       (headline p))))))
+
     (let ((e (org-element-at-point)))
       (headline e))))
 
@@ -98,7 +102,7 @@ Return 0 if there is no headline, meaning we're at top level."
   "Insert a feedback tree at point.
 
 The student identifiers in IDS form sub-headings one below DEPTH."
-  (let ((headline-prefix (apply #'concat (make-list (1+  depth) "*"))))
+  (let ((headline-prefix (apply #'concat (make-list (1+ depth) "*"))))
     (cl-flet ((headline (id)
 		(newline)
 		(insert (format "%s %s\n" headline-prefix id))))
@@ -107,9 +111,9 @@ The student identifiers in IDS form sub-headings one below DEPTH."
 
 
 (defun org-sta-fh--ids-from-dir (dir)
-  "Extract all the student ids corresponding to files in DIR.
+  "Extract all the student ids corresponding to entries in DIR.
 
-The files can be files or directories."
+The entries can be files or directories."
   (cl-labels ((ids-from-file-names (fns)
 		(if fns
 		    (let ((base (f-base (car fns))))
