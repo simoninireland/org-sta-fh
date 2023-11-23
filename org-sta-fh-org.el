@@ -37,6 +37,7 @@
 The headline is split on space and comma boundaries"
   (s-split (rx (one-or-more (or " " ","))) h t))
 
+
 (defun org-sta-fh--parse-headline (h)
   "Parse H as a headline and check result for validity.
 
@@ -55,11 +56,12 @@ and a (valid) grade."
 
 	;; check grade is valid
 	(let ((g (org-sta-fh--valid-grade? grade)))
-	    (if (null g)
-		(error (format "Invalid grade '%s'" grade))
+	  (if (null g)
+	      (error (format "Invalid grade '%s'" grade))
 
-	      ;; if everything is in order, return a list of students and their grade
-	      (append students (list g))))))))
+	    ;; if everything is in order, return a list of students and their grade
+	    (append students (list g))))))))
+
 
 (defun org-sta-fh--feedback-for-student? (ssg)
   "Test whether the parsed headline SSG refers to a single student."
@@ -116,7 +118,9 @@ The files can be files or directories."
 			  (cons base (ids-from-file-names (cdr fns)))
 
 			;; not a filename, ignore
-			(ids-from-file-names (cdr fns)))))))
+			(progn
+			  (message (format "Ignored file %s" (f-filename (car fns))))
+			  (ids-from-file-names (cdr fns))))))))
 
     (let ((fns (f-entries dir)))
       (ids-from-file-names fns))))
@@ -140,14 +144,16 @@ the current buffer. Return nil if point is not at a headline."
 	    e))
       nil t)))
 
+
 (defun org-sta-fh--find-containing-headline ()
-    "Find the headline in TREE containing point.
+  "Find the headline in TREE containing point.
 
 This assumes that TREE is the parse tree corresponding to
 the current buffer. Return nil if point is not within a
 headline."
-    (save-excursion
-      (org-up-heading-safe)))
+  (save-excursion
+    (org-up-heading-safe)))
+
 
 (defun org-sta-fh--export-as-string ()
   "Export the string corresponding to the current sub-tree in the current buffer.
@@ -164,6 +170,7 @@ and table of contents, and trim whitespace."
       (kill-buffer buf)
       feedback)))
 
+
 (defun org-sta-fh--parse-student (student grade tree)
   "Parse feedback for a single STUDENT and GRADE from TREE.
 
@@ -175,6 +182,7 @@ structure."
   ;; extract the content, writing it into the student's feedback buffer
   (let ((feedback (org-sta-fh--export-as-string)))
     (org-sta-fh--add-feedback student feedback)))
+
 
 (defun org-sta-fh--parse-students (students grade tree)
   "Use GRADE and TREE for all STUDENTS.
@@ -192,6 +200,7 @@ Point should be placed at the start of the tree's headline."
 	 (grade (car (last ssg)))
 	 (students (butlast ssg)))
     (org-sta-fh--parse-students students grade tree)))
+
 
 (defun org-sta-fh--parse-tree (tree)
   "Extract feedback and grades from the org TREE.
