@@ -13,12 +13,14 @@ manipulate org-mode documents.
 You are grading a student assignment. Each student has uploaded a
 submission. Your tasks are as follows:
 
+-   Create a list of students to be graded
 -   Write feedback for individual students
 -   Assign a grade to each student
 -   Upload the feedback and grades to MMS
 
-`org-sta-fh` takes a feedback and grades from the first two tasks
-and creates the files needed to complete the third.
+`org-sta-fh` creates a headline per student for the first task,
+captures feedback and grades from the next two tasks, and creates the
+files needed to complete the fourth.
 
 
 ## Installation
@@ -35,13 +37,24 @@ file:
     (add-to-list 'load-path (expand-file-name "~/.emacs.d/org-sta-fh"))
     (require 'org-sta-fh)
 
-You can if you wish bind the top-level user interface functions to
-keys, again in `.emacs`:
 
-    (define-key org-mode-map (kbd "C-c e") #'org-sta-fh-export-feedback-tree)
+## Top-level functions
 
-(I use `C-c e` because it's close to the usual export keys, `C-c
-     C-e`. You can use any unused key combo you like, of course.)
+`org-sta-fh` defines two top-level interactive commands:
+
+-  `org-sta-sh-build-feedback-tree`: Asks for a directory and looks
+   for files or directories whose base names match the pattern for
+   student identifiers ("matriculation numbers" in St Andrews
+   terminology). Then creates a heading per student at point, nested
+   appropriately
+-  `org-sta-sh-export-feedback-tree`: Prompts for a feedback
+   directory, and then creates a file for every heading beneath the
+   current heading whose name matches a student identifier followed by
+   a grade, plus a spreadsheet of grades. These are the files needed
+   by MMS.
+
+These commands only make sense in org mode buffers. You can bind them
+to keys if you wish, presumably within `org-mode-map`.
 
 
 ## Example
@@ -61,7 +74,7 @@ Suppose you have the following feedback in org mode
        Not a great solution. The indenting was the least of your problems.
 
 (This is an example of a text format, not of good feedback
-practices&#x2026;) The feedback tree has a title and some header notes,
+practices &#x2026;) The feedback tree has a title and some header notes,
 which are ignored. The sub-trees immediately beneath the main tree
 have a specific format, consisting of a student identifier and a
 grade, both of which need to confirm to the St Andrews standards
@@ -89,10 +102,9 @@ feedback file.
 
 ## To be done
 
--   Handle feedback for groups of students, with group and individual
-    feedback and grades
--   Turn this into a "proper" export backend
--   Automate upload to MMS
+-   Handle feedback for groups of students, with group feedback and
+    grades
+-   Handle cohort-wide general feedback
 
 
 ## Acknowledgements
