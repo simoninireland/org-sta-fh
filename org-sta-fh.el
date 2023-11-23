@@ -59,12 +59,16 @@
 	;; delete any buffers we created
 	(org-sta-fh--cleanup-buffers)))))
 
-(defun org-sta-fh-build-feedback-tree (title dir)
-  "Build a feedback tree with header TITLE from the submissions in DIR."
-  (interactive "sTitle: \nDSubmissions directory: ")
-  (let* ((tree (org-element-parse-buffer)))
+
+(defun org-sta-fh-build-feedback-tree (dir)
+  "Build a feedback tree from the submissions in DIR.
+
+This generates a heading for each student ID."
+  (interactive "DSubmissions directory: ")
+  (let ((ids (org-sta-fh--ids-from-dir dir))
+	(depth (org-sta-fh--headline-depth-at-point)))
     (save-excursion
-      (org-sta-fh--insert-feedback-tree title ids 1))))
+      (org-sta-fh--insert-feedback-tree ids depth))))
 
 
 (provide 'org-sta-fh)
