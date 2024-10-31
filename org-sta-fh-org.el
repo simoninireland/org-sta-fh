@@ -165,10 +165,7 @@ headline."
 We tweak the export parameters to avoid adding headings such as author
 and table of contents, and trim whitespace."
   (save-excursion
-    (let* ((org-export-with-title nil)
-	   (org-export-with-author nil)
-	   (org-export-with-toc nil)
-	   (buf (org-ascii-export-as-ascii nil t))
+    (let* ((buf (org-ascii-export-as-ascii nil t t t))
 	   (feedback (with-current-buffer buf
 		       (s-trim (buffer-string)))))
       (kill-buffer buf)
