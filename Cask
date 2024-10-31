@@ -10,7 +10,7 @@
 (depends-on "s")
 (depends-on "f")
 (depends-on "dash")
-(depends-on "org" "8.0")
+(depends-on "org")
 
 (development
   (depends-on "package-lint"))
