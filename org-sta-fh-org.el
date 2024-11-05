@@ -165,7 +165,7 @@ headline."
 We tweak the export parameters to avoid adding headings such as author
 and table of contents, and trim whitespace."
   (save-excursion
-    (let* ((buf (org-ascii-export-as-ascii nil t t t))
+    (let* ((buf (org-ascii-export-as-ascii nil t nil t))
 	   (feedback (with-current-buffer buf
 		       (s-trim (buffer-string)))))
       (kill-buffer buf)
@@ -182,6 +182,7 @@ structure."
 
   ;; extract the content, writing it into the student's feedback buffer
   (let ((feedback (org-sta-fh--export-as-string)))
+    ;;(message "%s %s %s" student grade feedback)
     (org-sta-fh--add-feedback student feedback)))
 
 
